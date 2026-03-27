@@ -38,8 +38,8 @@ FROM base AS production
 WORKDIR /app
 COPY --chown=node:node --from=build /app /app
 RUN npm install --global --omit=dev @anthropic-ai/claude-code@latest @openai/codex@latest opencode-ai \
-  && mkdir -p /paperclip \
-  && chown node:node /paperclip
+  && mkdir -p /paperclip /root/.claude \
+  && chown -R node:node /paperclip /root/.claude
 
 ENV NODE_ENV=production \
   HOME=/paperclip \
@@ -49,10 +49,9 @@ ENV NODE_ENV=production \
   PAPERCLIP_HOME=/paperclip \
   PAPERCLIP_INSTANCE_ID=default \
   PAPERCLIP_CONFIG=/paperclip/instances/default/config.json \
-  PAPERCLIP_DEPLOYMENT_MODE=authenticated \
-  PAPERCLIP_DEPLOYMENT_EXPOSURE=private
+  PAPERCLIP_DEPLOYMENT_MODE=local_trusted \
+  PAPERCLIP_DEPLOYMENT_EXPOSURE=public
 
-VOLUME ["/paperclip"]
 EXPOSE 3100
 
 USER node
