@@ -38,11 +38,17 @@ FROM base AS production
 WORKDIR /app
 COPY --chown=node:node --from=build /app /app
 
-# Install claude and codex CLIs as root
-RUN npm install --global --omit=dev @anthropic-ai/claude-code@latest @openai/codex@latest
+# Install claude and codex CLIs and gosu for privilege dropping
+RUN apt-get update && apt-get install -y --no-install-recommends gosu \
+  && rm -rf /var/lib/apt/lists/* \
+  && npm install --global --omit=dev @anthropic-ai/claude-code@latest @openai/codex@latest
 
-# Create paperclip data dir and set permissions - node user can write here after volume mount
+# Create paperclip data dir
 RUN mkdir -p /paperclip && chown node:node /paperclip
+
+# Copy entrypoint script
+COPY docker/entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
 
 ENV NODE_ENV=production \
   PORT=3100 \
@@ -57,5 +63,5 @@ ENV NODE_ENV=production \
 
 EXPOSE 3100
 
-USER node
-CMD ["node", "--import", "./server/node_modules/tsx/dist/loader.mjs", "server/dist/index.js"]
+# Run as root initially so entrypoint can fix volume permissions
+ENTRYPOINT ["/entrypoint.sh"]
