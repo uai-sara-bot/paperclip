@@ -37,20 +37,23 @@ RUN test -f server/dist/index.js || (echo "ERROR: server build output missing" &
 FROM base AS production
 WORKDIR /app
 COPY --chown=node:node --from=build /app /app
-RUN npm install --global --omit=dev @anthropic-ai/claude-code@latest @openai/codex@latest opencode-ai \
-  && mkdir -p /paperclip /root/.claude \
-  && chown -R node:node /paperclip /root/.claude
+
+# Install claude and codex CLIs as root
+RUN npm install --global --omit=dev @anthropic-ai/claude-code@latest @openai/codex@latest
+
+# Create paperclip data dir and set permissions - node user can write here after volume mount
+RUN mkdir -p /paperclip && chown node:node /paperclip
 
 ENV NODE_ENV=production \
-  HOME=/paperclip \
-  HOST=0.0.0.0 \
   PORT=3100 \
   SERVE_UI=true \
   PAPERCLIP_HOME=/paperclip \
   PAPERCLIP_INSTANCE_ID=default \
   PAPERCLIP_CONFIG=/paperclip/instances/default/config.json \
   PAPERCLIP_DEPLOYMENT_MODE=local_trusted \
-  PAPERCLIP_DEPLOYMENT_EXPOSURE=public
+  PAPERCLIP_DEPLOYMENT_EXPOSURE=public \
+  NPM_CONFIG_CACHE=/tmp/.npm \
+  HOST=0.0.0.0
 
 EXPOSE 3100
 
