@@ -133,6 +133,25 @@ auto_bootstrap() {
   echo "[entrypoint] WARNING: Server didn't become healthy in 120s, skipping auto-bootstrap"
 }
 
+# --- Auto-install Claude native binary on first deploy ---
+CLAUDE_NATIVE="/paperclip/.local/bin/claude"
+if [ ! -f "$CLAUDE_NATIVE" ]; then
+  echo "[entrypoint] Installing Claude Code native binary..."
+  mkdir -p /paperclip/.local/bin
+  if [ "$(id -u)" = "0" ]; then
+    chown -R node:node /paperclip/.local
+    gosu node env HOME=/paperclip claude install --yes 2>&1 || true
+  else
+    claude install --yes 2>&1 || true
+  fi
+  if [ -f "$CLAUDE_NATIVE" ]; then
+    echo "[entrypoint] Claude native binary installed at ${CLAUDE_NATIVE}"
+  fi
+fi
+
+# Ensure PATH includes the local bin
+export PATH="/paperclip/.local/bin:/usr/local/bin:/usr/bin:/bin:${PATH}"
+
 # --- Fix permissions and start server ---
 if [ "$(id -u)" = "0" ]; then
   mkdir -p /paperclip

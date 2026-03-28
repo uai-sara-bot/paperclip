@@ -43,20 +43,28 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     gosu xxd gh openssh-client \
   && rm -rf /var/lib/apt/lists/*
 
-# Install Claude Code and Codex CLIs globally and ensure they're in PATH
+# Install Claude Code and Codex CLIs globally
 RUN npm install --global --omit=dev @anthropic-ai/claude-code@latest @openai/codex@latest \
-  && echo "Claude CLI installed at: $(which claude)" \
+  && echo "Claude CLI (npm) installed at: $(which claude)" \
   && claude --version || true
 
-# Ensure npm global bin is in PATH for all users (node user especially)
-ENV PATH="/usr/local/share/npm-global/bin:/usr/local/bin:/usr/bin:/bin:${PATH}"
+# Run 'claude install' to set up the native binary, then make it accessible system-wide
+RUN mkdir -p /usr/local/share/.claude-home/.local/bin \
+  && HOME=/usr/local/share/.claude-home claude install --yes 2>/dev/null || true \
+  && if [ -f /usr/local/share/.claude-home/.local/bin/claude ]; then \
+       cp /usr/local/share/.claude-home/.local/bin/claude /usr/local/bin/claude-native; \
+     fi \
+  && rm -rf /usr/local/share/.claude-home
+
+# Ensure all CLI paths are available
+ENV PATH="/paperclip/.local/bin:/usr/local/bin:/usr/bin:/bin:${PATH}"
 
 # Create paperclip data dir and set it as node user's home directory
 # This ensures gosu/su won't reset HOME to /home/node
 RUN mkdir -p /paperclip && chown node:node /paperclip \
   && sed -i 's|node:/home/node|node:/paperclip|' /etc/passwd
 
-# Copy entrypoint script
+# Copy entrypoint script (cache-bust: v2 with volume-aware config)
 COPY docker/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
