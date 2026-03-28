@@ -118,7 +118,7 @@ auto_bootstrap() {
       echo "[entrypoint] Server is healthy, generating CEO bootstrap invite..."
       cd /app
       if [ "$(id -u)" = "0" ]; then
-        gosu node node cli/node_modules/tsx/dist/cli.mjs cli/src/index.ts auth bootstrap-ceo --force 2>&1 || true
+        gosu node env HOME=/paperclip node cli/node_modules/tsx/dist/cli.mjs cli/src/index.ts auth bootstrap-ceo --force 2>&1 || true
       else
         node cli/node_modules/tsx/dist/cli.mjs cli/src/index.ts auth bootstrap-ceo --force 2>&1 || true
       fi
@@ -141,8 +141,9 @@ if [ "$(id -u)" = "0" ]; then
   # Start auto-bootstrap in background (runs after server is healthy)
   auto_bootstrap &
 
-  # Run the server as node user (exec replaces this process)
-  exec gosu node node --import ./server/node_modules/tsx/dist/loader.mjs server/dist/index.js "$@"
+  # Run the server as node user with HOME=/paperclip so all data paths resolve to the volume
+  export HOME=/paperclip
+  exec gosu node env HOME=/paperclip node --import ./server/node_modules/tsx/dist/loader.mjs server/dist/index.js "$@"
 else
   auto_bootstrap &
   exec node --import ./server/node_modules/tsx/dist/loader.mjs server/dist/index.js "$@"
