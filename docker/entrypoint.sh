@@ -4,7 +4,14 @@ set -e
 CONFIG_DIR="/paperclip/instances/default"
 CONFIG_FILE="${CONFIG_DIR}/config.json"
 
-# --- Auto-generate config.json if it doesn't exist ---
+# --- Auto-generate config.json if it doesn't exist or needs migration ---
+# Check if existing config has paths pointing to wrong location (home dir instead of volume)
+if [ -f "$CONFIG_FILE" ] && grep -q '\.paperclip' "$CONFIG_FILE" 2>/dev/null; then
+  echo "[entrypoint] Detected old config with home-dir paths, regenerating..."
+  rm -f "$CONFIG_FILE"
+  rm -f "/paperclip/.bootstrapped"
+fi
+
 if [ ! -f "$CONFIG_FILE" ]; then
   echo "[entrypoint] No config found at ${CONFIG_FILE}, generating one..."
   mkdir -p "$CONFIG_DIR"
@@ -34,7 +41,15 @@ if [ ! -f "$CONFIG_FILE" ]; then
     "source": "configure"
   },
   "database": {
-    "mode": "embedded-postgres"
+    "mode": "embedded-postgres",
+    "embeddedPostgresDataDir": "/paperclip/instances/default/db",
+    "embeddedPostgresPort": 54329,
+    "backup": {
+      "enabled": true,
+      "intervalMinutes": 60,
+      "retentionDays": 30,
+      "dir": "/paperclip/instances/default/data/backups"
+    }
   },
   "logging": {
     "mode": "file",
@@ -48,6 +63,19 @@ if [ ! -f "$CONFIG_FILE" ]; then
   },
   "auth": {
     ${AUTH_BLOCK}
+  },
+  "storage": {
+    "provider": "local_disk",
+    "localDisk": {
+      "baseDir": "/paperclip/instances/default/data/storage"
+    }
+  },
+  "secrets": {
+    "provider": "local_encrypted",
+    "strictMode": false,
+    "localEncrypted": {
+      "keyFilePath": "/paperclip/instances/default/secrets/master.key"
+    }
   }
 }
 EOFCONFIG
