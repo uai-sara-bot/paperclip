@@ -51,8 +51,10 @@ RUN npm install --global --omit=dev @anthropic-ai/claude-code@latest @openai/cod
 # Ensure npm global bin is in PATH for all users (node user especially)
 ENV PATH="/usr/local/share/npm-global/bin:/usr/local/bin:/usr/bin:/bin:${PATH}"
 
-# Create paperclip data dir
-RUN mkdir -p /paperclip && chown node:node /paperclip
+# Create paperclip data dir and set it as node user's home directory
+# This ensures gosu/su won't reset HOME to /home/node
+RUN mkdir -p /paperclip && chown node:node /paperclip \
+  && sed -i 's|node:/home/node|node:/paperclip|' /etc/passwd
 
 # Copy entrypoint script
 COPY docker/entrypoint.sh /entrypoint.sh
