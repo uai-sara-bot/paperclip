@@ -149,6 +149,17 @@ if [ ! -f "$CLAUDE_NATIVE" ]; then
   fi
 fi
 
+# --- Sync Claude credentials from root to volume ---
+# Railway shell drops users in as root. If they ran 'claude login' as root,
+# credentials end up in /root/.claude/ instead of /paperclip/.claude/.
+# Sync them so the node user (which runs the server) can find them.
+if [ -d "/root/.claude" ] && [ "$(ls -A /root/.claude 2>/dev/null)" ]; then
+  echo "[entrypoint] Syncing Claude credentials from /root/.claude to /paperclip/.claude..."
+  mkdir -p /paperclip/.claude
+  cp -a /root/.claude/. /paperclip/.claude/ 2>/dev/null || true
+  chown -R node:node /paperclip/.claude 2>/dev/null || true
+fi
+
 # Ensure PATH includes the local bin
 export PATH="/paperclip/.local/bin:/usr/local/bin:/usr/bin:/bin:${PATH}"
 

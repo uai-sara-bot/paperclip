@@ -64,9 +64,16 @@ ENV PATH="/paperclip/.local/bin:/usr/local/bin:/usr/bin:/bin:${PATH}"
 RUN mkdir -p /paperclip && chown node:node /paperclip \
   && sed -i 's|node:/home/node|node:/paperclip|' /etc/passwd
 
-# Copy entrypoint script (cache-bust: v2 with volume-aware config)
+# Copy entrypoint script
 COPY docker/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
+
+# Set up shell profile so Railway shell users get correct HOME and PATH
+# This ensures 'claude login' saves credentials to the volume regardless of user
+RUN echo 'export HOME=/paperclip' >> /etc/profile.d/paperclip.sh \
+  && echo 'export PATH="/paperclip/.local/bin:/usr/local/bin:/usr/bin:/bin:$PATH"' >> /etc/profile.d/paperclip.sh \
+  && echo 'export HOME=/paperclip' >> /root/.bashrc \
+  && echo 'export PATH="/paperclip/.local/bin:/usr/local/bin:/usr/bin:/bin:$PATH"' >> /root/.bashrc
 
 ENV NODE_ENV=production \
   HOME=/paperclip \
