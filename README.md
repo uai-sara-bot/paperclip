@@ -171,24 +171,58 @@ Paperclip handles the hard orchestration details correctly.
 
 ## Deploy to Railway
 
-The fastest way to get Paperclip running in the cloud:
-
-1. Click the button below
-2. Add a **volume** mounted at `/paperclip` (Settings → Volumes → New Volume)
-3. Set `ANTHROPIC_API_KEY` in Railway Variables (get one at [console.anthropic.com](https://console.anthropic.com/settings/keys))
-4. Deploy — that's it!
+The fastest way to get Paperclip running in the cloud — one click, zero config:
 
 [![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/new/template?template=https://github.com/uai-sara-bot/paperclip&envs=ANTHROPIC_API_KEY&optionalEnvs=ANTHROPIC_API_KEY&ANTHROPIC_API_KEY=&referralCode=)
 
-The entrypoint script automatically handles:
-- **Config generation** — creates the required `config.json` on first boot
-- **Auth secret** — generates and persists a `BETTER_AUTH_SECRET` on the volume (or uses yours if you set one)
+### What happens automatically
+
+Everything is configured on first boot — no manual setup needed:
+
+- **Config generation** — creates `config.json` with correct paths and auth settings
+- **Auth secret** — generates and persists `BETTER_AUTH_SECRET` on the volume
 - **Public URL detection** — auto-detects your Railway domain via `RAILWAY_PUBLIC_DOMAIN`
-- **Volume permissions** — fixes ownership for the `node` user
+- **Database** — embedded PostgreSQL, stored on the volume, persists across redeploys
+- **CEO invite** — auto-generated on first deploy (check deploy logs for the invite URL)
+- **Claude Code CLI** — pre-installed with native binary on the volume
+- **Volume permissions** — fixed automatically on every startup
 
-> **Important:** Add a volume mounted at `/paperclip` in Settings → Volumes. This persists your data (database, configs, agent state) across deploys.
+### After deploying
 
-After first deploy, open your Railway URL and create your admin account to get started.
+1. **Check deploy logs** for the CEO invite URL — click it to create your admin account
+2. **Add a volume** at `/paperclip` if the template didn't create one (Settings → Volumes → New Volume)
+3. **Set up Claude Code** — choose one of these options:
+
+#### Option A: API Key (simplest)
+
+Set `ANTHROPIC_API_KEY` in Railway Variables with a standard API key (starts with `sk-ant-api03-...`) from [console.anthropic.com/settings/keys](https://console.anthropic.com/settings/keys). The agent will use it automatically — no login needed.
+
+> **Note:** OAuth tokens (`sk-ant-oat01-...`) don't work with Claude Code CLI. You need a standard API key.
+
+#### Option B: Claude Max Subscription (no API costs)
+
+If you have a Claude Max subscription, log in via the terminal instead:
+
+```bash
+# Open a shell in your Railway container
+railway shell
+
+# Log in to Claude Code
+claude login
+```
+
+Your login credentials persist on the volume across redeploys. Agents will use your subscription — no API key charges.
+
+### Environment variables
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `ANTHROPIC_API_KEY` | Optional | Standard Anthropic API key (`sk-ant-api03-...`). If not set, use `claude login` via terminal instead. |
+| `BETTER_AUTH_SECRET` | Auto-generated | Session signing secret. Auto-generated and persisted on volume if not set. |
+| `PAPERCLIP_AGENT_JWT_SECRET` | Auto-generated | Agent JWT signing secret. Set one for agent-to-API auth, or leave for auto-generation. |
+| `PAPERCLIP_PUBLIC_URL` | Auto-detected | Your public URL. Auto-detected from `RAILWAY_PUBLIC_DOMAIN` if not set. |
+
+All data persists on the `/paperclip` volume — database, configs, auth credentials, backups, and agent state survive across redeploys.
 
 <br/>
 
