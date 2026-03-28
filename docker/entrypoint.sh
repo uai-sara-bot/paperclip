@@ -75,15 +75,47 @@ if [ -z "$PAPERCLIP_PUBLIC_URL" ] && [ -n "$RAILWAY_PUBLIC_DOMAIN" ]; then
   echo "[entrypoint] Auto-detected PAPERCLIP_PUBLIC_URL=${PAPERCLIP_PUBLIC_URL}"
 fi
 
+# --- Auto-bootstrap CEO invite on first deploy ---
+auto_bootstrap() {
+  local BOOTSTRAP_MARKER="/paperclip/.bootstrapped"
+  if [ -f "$BOOTSTRAP_MARKER" ]; then
+    return
+  fi
+
+  echo "[entrypoint] First deploy detected — will auto-bootstrap CEO invite after server starts..."
+  
+  # Wait for the server to be healthy
+  for i in $(seq 1 60); do
+    if curl -sf http://127.0.0.1:3100/api/health > /dev/null 2>&1; then
+      echo "[entrypoint] Server is healthy, generating CEO bootstrap invite..."
+      cd /app
+      if [ "$(id -u)" = "0" ]; then
+        gosu node node cli/node_modules/tsx/dist/cli.mjs cli/src/index.ts auth bootstrap-ceo --force 2>&1 || true
+      else
+        node cli/node_modules/tsx/dist/cli.mjs cli/src/index.ts auth bootstrap-ceo --force 2>&1 || true
+      fi
+      touch "$BOOTSTRAP_MARKER"
+      echo "[entrypoint] ============================================="
+      echo "[entrypoint] Check the logs above for your CEO invite URL!"
+      echo "[entrypoint] ============================================="
+      return
+    fi
+    sleep 2
+  done
+  echo "[entrypoint] WARNING: Server didn't become healthy in 120s, skipping auto-bootstrap"
+}
+
 # --- Fix permissions and start server ---
 if [ "$(id -u)" = "0" ]; then
-  # Ensure the paperclip directory is owned by node user
   mkdir -p /paperclip
   chown -R node:node /paperclip
 
-  # Run the server as node user
+  # Start auto-bootstrap in background (runs after server is healthy)
+  auto_bootstrap &
+
+  # Run the server as node user (exec replaces this process)
   exec gosu node node --import ./server/node_modules/tsx/dist/loader.mjs server/dist/index.js "$@"
 else
-  # Already running as non-root, just start the server
+  auto_bootstrap &
   exec node --import ./server/node_modules/tsx/dist/loader.mjs server/dist/index.js "$@"
 fi
