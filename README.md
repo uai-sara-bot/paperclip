@@ -175,12 +175,20 @@ The fastest way to get Paperclip running in the cloud:
 
 1. Click the button below
 2. Add a **volume** mounted at `/paperclip` (Settings → Volumes → New Volume)
-3. Set any API keys you need (e.g. `ANTHROPIC_API_KEY`) as environment variables
+3. Set `ANTHROPIC_API_KEY` in Railway Variables (get one at [console.anthropic.com](https://console.anthropic.com/settings/keys))
 4. Deploy — that's it!
 
 [![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/new/template?template=https://github.com/uai-sara-bot/paperclip&envs=ANTHROPIC_API_KEY&optionalEnvs=ANTHROPIC_API_KEY&ANTHROPIC_API_KEY=&referralCode=)
 
-> **Important:** After deploying, go to your service **Settings → Volumes** and add a volume mounted at `/paperclip`. This persists your data (database, configs, agent state) across deploys.
+The entrypoint script automatically handles:
+- **Config generation** — creates the required `config.json` on first boot
+- **Auth secret** — generates and persists a `BETTER_AUTH_SECRET` on the volume (or uses yours if you set one)
+- **Public URL detection** — auto-detects your Railway domain via `RAILWAY_PUBLIC_DOMAIN`
+- **Volume permissions** — fixes ownership for the `node` user
+
+> **Important:** Add a volume mounted at `/paperclip` in Settings → Volumes. This persists your data (database, configs, agent state) across deploys.
+
+After first deploy, open your Railway URL and create your admin account to get started.
 
 <br/>
 

@@ -38,8 +38,8 @@ FROM base AS production
 WORKDIR /app
 COPY --chown=node:node --from=build /app /app
 
-# Install claude and codex CLIs and gosu for privilege dropping
-RUN apt-get update && apt-get install -y --no-install-recommends gosu \
+# Install claude and codex CLIs, gosu for privilege dropping, and xxd for secret generation
+RUN apt-get update && apt-get install -y --no-install-recommends gosu xxd \
   && rm -rf /var/lib/apt/lists/* \
   && npm install --global --omit=dev @anthropic-ai/claude-code@latest @openai/codex@latest
 
