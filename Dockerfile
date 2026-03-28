@@ -38,10 +38,18 @@ FROM base AS production
 WORKDIR /app
 COPY --chown=node:node --from=build /app /app
 
-# Install claude and codex CLIs, gosu for privilege dropping, and xxd for secret generation
-RUN apt-get update && apt-get install -y --no-install-recommends gosu xxd \
-  && rm -rf /var/lib/apt/lists/* \
-  && npm install --global --omit=dev @anthropic-ai/claude-code@latest @openai/codex@latest
+# Install system tools: gosu (privilege dropping), xxd (secret gen), gh (GitHub CLI), git
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gosu xxd gh openssh-client \
+  && rm -rf /var/lib/apt/lists/*
+
+# Install Claude Code and Codex CLIs globally and ensure they're in PATH
+RUN npm install --global --omit=dev @anthropic-ai/claude-code@latest @openai/codex@latest \
+  && echo "Claude CLI installed at: $(which claude)" \
+  && claude --version || true
+
+# Ensure npm global bin is in PATH for all users (node user especially)
+ENV PATH="/usr/local/share/npm-global/bin:/usr/local/bin:/usr/bin:/bin:${PATH}"
 
 # Create paperclip data dir
 RUN mkdir -p /paperclip && chown node:node /paperclip
