@@ -4,10 +4,10 @@ set -e
 CONFIG_DIR="/paperclip/instances/default"
 CONFIG_FILE="${CONFIG_DIR}/config.json"
 
-# --- Auto-generate config.json if it doesn't exist or needs migration ---
-# Check if existing config has paths pointing to wrong location (home dir instead of volume)
-if [ -f "$CONFIG_FILE" ] && grep -q '\.paperclip' "$CONFIG_FILE" 2>/dev/null; then
-  echo "[entrypoint] Detected old config with home-dir paths, regenerating..."
+# --- Auto-generate config.json if it doesn't exist or is incomplete ---
+# Regenerate if config is missing embeddedPostgresDataDir (old format that causes data loss)
+if [ -f "$CONFIG_FILE" ] && ! grep -q 'embeddedPostgresDataDir' "$CONFIG_FILE" 2>/dev/null; then
+  echo "[entrypoint] Detected old config without explicit data paths, regenerating..."
   rm -f "$CONFIG_FILE"
   rm -f "/paperclip/.bootstrapped"
 fi
