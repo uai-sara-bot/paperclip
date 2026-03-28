@@ -64,9 +64,10 @@ ENV PATH="/paperclip/.local/bin:/usr/local/bin:/usr/bin:/bin:${PATH}"
 RUN mkdir -p /paperclip && chown node:node /paperclip \
   && sed -i 's|node:/home/node|node:/paperclip|' /etc/passwd
 
-# Copy entrypoint script
+# Copy entrypoint and helper scripts
 COPY docker/entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
+COPY docker/claude-login.sh /claude-login.sh
+RUN chmod +x /entrypoint.sh /claude-login.sh
 
 # Set HOME=/paperclip for ALL users system-wide via /etc/environment
 # This is the most reliable way — it's read by PAM, login shells, and non-interactive shells

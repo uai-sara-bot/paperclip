@@ -207,9 +207,11 @@ If you have a Claude Max subscription, log in via the terminal instead:
 # Open a shell in your Railway container
 railway shell
 
-# Log in to Claude Code
-claude login
+# Use the helper script (ensures credentials save to the right place)
+/claude-login.sh
 ```
+
+> **Important:** Always use `/claude-login.sh` instead of `claude login` directly. The helper script ensures credentials are saved to the persistent volume at `/paperclip/.claude/` so agents can find them.
 
 Your login credentials persist on the volume across redeploys. Agents will use your subscription — no API key charges.
 
