@@ -169,7 +169,22 @@ Paperclip handles the hard orchestration details correctly.
 
 <br/>
 
-## Quickstart
+## Deploy to Railway
+
+The fastest way to get Paperclip running in the cloud:
+
+1. Click the button below
+2. Add a **volume** mounted at `/paperclip` (Settings → Volumes → New Volume)
+3. Set any API keys you need (e.g. `ANTHROPIC_API_KEY`) as environment variables
+4. Deploy — that's it!
+
+[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/new/template?template=https://github.com/uai-sara-bot/paperclip&envs=ANTHROPIC_API_KEY&optionalEnvs=ANTHROPIC_API_KEY&ANTHROPIC_API_KEY=&referralCode=)
+
+> **Important:** After deploying, go to your service **Settings → Volumes** and add a volume mounted at `/paperclip`. This persists your data (database, configs, agent state) across deploys.
+
+<br/>
+
+## Quickstart (Local)
 
 Open source. Self-hosted. No Paperclip account required.
 
