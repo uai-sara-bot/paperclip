@@ -156,16 +156,31 @@ if [ -f "$CLAUDE_NATIVE" ] && [ ! -f /usr/local/bin/claude ]; then
   echo "[entrypoint] Symlinked /usr/local/bin/claude -> ${CLAUDE_NATIVE}"
 fi
 
-# --- Sync Claude credentials from root to volume ---
-# Railway shell drops users in as root. If they ran 'claude login' as root,
-# credentials end up in /root/.claude/ instead of /paperclip/.claude/.
-# Sync them so the node user (which runs the server) can find them.
-if [ -d "/root/.claude" ] && [ "$(ls -A /root/.claude 2>/dev/null)" ]; then
-  echo "[entrypoint] Syncing Claude credentials from /root/.claude to /paperclip/.claude..."
-  mkdir -p /paperclip/.claude
-  cp -a /root/.claude/. /paperclip/.claude/ 2>/dev/null || true
-  chown -R node:node /paperclip/.claude 2>/dev/null || true
-fi
+# --- Sync Claude credentials from any location to /paperclip/.claude ---
+# Railway shell may save credentials to /root/.claude or /home/node/.claude
+# The server (node user with HOME=/paperclip) looks in /paperclip/.claude
+sync_claude_credentials() {
+  local synced=false
+  for src in /root/.claude /home/node/.claude; do
+    if [ -d "$src" ] && [ -f "$src/.credentials.json" ] 2>/dev/null; then
+      if [ "$src" != "/paperclip/.claude" ]; then
+        mkdir -p /paperclip/.claude
+        cp -a "$src/." /paperclip/.claude/ 2>/dev/null || true
+        chown -R node:node /paperclip/.claude 2>/dev/null || true
+        echo "[entrypoint] Synced Claude credentials from $src to /paperclip/.claude/"
+        synced=true
+      fi
+    fi
+  done
+  # Also symlink so any future login from any HOME saves to the right place
+  for link_src in /root/.claude /home/node/.claude; do
+    if [ "$link_src" != "/paperclip/.claude" ] && [ ! -L "$link_src" ]; then
+      rm -rf "$link_src" 2>/dev/null || true
+      ln -sf /paperclip/.claude "$link_src" 2>/dev/null || true
+    fi
+  done
+}
+sync_claude_credentials
 
 # Ensure PATH includes the local bin
 export PATH="/paperclip/.local/bin:/usr/local/bin:/usr/bin:/bin:${PATH}"
