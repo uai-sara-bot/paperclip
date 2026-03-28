@@ -91,7 +91,8 @@ ENV NODE_ENV=production \
   PAPERCLIP_DEPLOYMENT_MODE=authenticated \
   PAPERCLIP_DEPLOYMENT_EXPOSURE=public \
   NPM_CONFIG_CACHE=/tmp/.npm \
-  HOST=0.0.0.0
+  HOST=0.0.0.0 \
+  CLAUDE_CONFIG_DIR=/paperclip/.claude
 
 EXPOSE 3100
 
