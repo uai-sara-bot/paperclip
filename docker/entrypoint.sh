@@ -149,6 +149,13 @@ if [ ! -f "$CLAUDE_NATIVE" ]; then
   fi
 fi
 
+# Ensure claude is always findable at /usr/local/bin/claude (symlink to native)
+# 'claude install' removes the npm version from /usr/local/bin, so we restore access
+if [ -f "$CLAUDE_NATIVE" ] && [ ! -f /usr/local/bin/claude ]; then
+  ln -sf "$CLAUDE_NATIVE" /usr/local/bin/claude
+  echo "[entrypoint] Symlinked /usr/local/bin/claude -> ${CLAUDE_NATIVE}"
+fi
+
 # --- Sync Claude credentials from root to volume ---
 # Railway shell drops users in as root. If they ran 'claude login' as root,
 # credentials end up in /root/.claude/ instead of /paperclip/.claude/.

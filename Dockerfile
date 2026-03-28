@@ -68,12 +68,17 @@ RUN mkdir -p /paperclip && chown node:node /paperclip \
 COPY docker/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
-# Set up shell profile so Railway shell users get correct HOME and PATH
-# This ensures 'claude login' saves credentials to the volume regardless of user
-RUN echo 'export HOME=/paperclip' >> /etc/profile.d/paperclip.sh \
-  && echo 'export PATH="/paperclip/.local/bin:/usr/local/bin:/usr/bin:/bin:$PATH"' >> /etc/profile.d/paperclip.sh \
+# Set HOME=/paperclip for ALL users system-wide via /etc/environment
+# This is the most reliable way — it's read by PAM, login shells, and non-interactive shells
+# Also set it in every possible profile location for Railway shell compatibility
+RUN echo 'HOME=/paperclip' >> /etc/environment \
+  && echo 'export HOME=/paperclip' >> /etc/profile.d/paperclip.sh \
+  && echo 'export PATH="/paperclip/.local/bin:$PATH"' >> /etc/profile.d/paperclip.sh \
   && echo 'export HOME=/paperclip' >> /root/.bashrc \
-  && echo 'export PATH="/paperclip/.local/bin:/usr/local/bin:/usr/bin:/bin:$PATH"' >> /root/.bashrc
+  && echo 'export PATH="/paperclip/.local/bin:$PATH"' >> /root/.bashrc \
+  && echo 'export HOME=/paperclip' >> /etc/bash.bashrc \
+  && echo 'export PATH="/paperclip/.local/bin:$PATH"' >> /etc/bash.bashrc \
+  && sed -i 's|root:/root|root:/paperclip|' /etc/passwd
 
 ENV NODE_ENV=production \
   HOME=/paperclip \
