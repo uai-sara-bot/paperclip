@@ -201,19 +201,30 @@ Set `ANTHROPIC_API_KEY` in Railway Variables with a standard API key (starts wit
 
 #### Option B: Claude Max Subscription (no API costs)
 
-If you have a Claude Max subscription, log in via the terminal instead:
+If you have a Claude Pro/Max subscription, you can use it instead of paying per-API-call. This requires a one-time SSH login after each fresh deployment:
+
+**Step 1:** Open an SSH shell in your Railway container (Railway Dashboard → your Paperclip service → Settings → SSH, or use the CLI):
 
 ```bash
-# Open a shell in your Railway container
 railway shell
+```
 
-# Use the helper script (ensures credentials save to the right place)
+**Step 2:** Run the login helper script:
+
+```bash
 /claude-login.sh
 ```
 
-> **Important:** Always use `/claude-login.sh` instead of `claude login` directly. The helper script ensures credentials are saved to the persistent volume at `/paperclip/.claude/` so agents can find them.
+**Step 3:** Follow the prompts — select "Claude account with subscription", then authenticate in the browser.
 
-Your login credentials persist on the volume across redeploys. Agents will use your subscription — no API key charges.
+That's it! The helper script saves credentials to the persistent volume and fixes file permissions automatically. Agents will use your subscription with no further setup.
+
+> **⚠️ Always use `/claude-login.sh`** instead of running `claude login` directly. The helper script ensures:
+> - Credentials are saved to the persistent volume at `/paperclip/.claude/`
+> - File permissions are set correctly so the server process can read them
+> - Everything works immediately — no manual `chown` needed
+
+> **Note:** You only need to do this once per fresh deployment. Credentials persist on the volume across redeploys and container restarts.
 
 ### Environment variables
 
