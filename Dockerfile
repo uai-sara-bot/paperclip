@@ -81,6 +81,10 @@ RUN echo 'HOME=/paperclip' >> /etc/environment \
   && echo 'export PATH="/paperclip/.local/bin:$PATH"' >> /etc/bash.bashrc \
   && sed -i 's|root:/root|root:/paperclip|' /etc/passwd
 
+# Symlink .claude dirs so any shell context (root, node) finds credentials
+RUN ln -sf /paperclip/.claude /root/.claude 2>/dev/null || true \
+  && mkdir -p /home/node && ln -sf /paperclip/.claude /home/node/.claude 2>/dev/null || true
+
 ENV NODE_ENV=production \
   HOME=/paperclip \
   PORT=3100 \
