@@ -228,12 +228,34 @@ That's it! The helper script saves credentials to the persistent volume and fixe
 
 ### Environment variables
 
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `ANTHROPIC_API_KEY` | Optional | Standard Anthropic API key (`sk-ant-api03-...`). If not set, use `claude login` via terminal instead. |
-| `BETTER_AUTH_SECRET` | Auto-generated | Session signing secret. Auto-generated and persisted on volume if not set. |
-| `PAPERCLIP_AGENT_JWT_SECRET` | Auto-generated | Agent JWT signing secret. Set one for agent-to-API auth, or leave for auto-generation. |
+These variables should be set in your **Railway service's Variables tab** (not just in the Dockerfile):
+
+#### Required for Claude Code to work
+
+| Variable | Value | Description |
+|----------|-------|-------------|
+| `HOME` | `/paperclip` | **Must be set as a Railway variable.** Ensures all processes (including SSH sessions) use the persistent volume as the home directory. Without this, credentials and configs won't be found. |
+| `CLAUDE_CONFIG_DIR` | `/paperclip/.claude` | **Must be set as a Railway variable.** Tells Claude Code where to find credentials and config. Without this, Claude will prompt for login even when credentials exist on the volume. |
+
+> **⚠️ These two variables are critical.** The Dockerfile sets them at build time, but Railway SSH sessions and the runtime environment need them set as Railway service variables to work correctly.
+
+#### Server configuration
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `HOST` | `0.0.0.0` | Server bind address. |
+| `PORT` | `3100` | Server port. |
+| `PAPERCLIP_DEPLOYMENT_MODE` | `authenticated` | Set to `authenticated` for public deployments (requires login). |
+| `PAPERCLIP_DEPLOYMENT_EXPOSURE` | `public` | Set to `public` to allow external access. |
 | `PAPERCLIP_PUBLIC_URL` | Auto-detected | Your public URL. Auto-detected from `RAILWAY_PUBLIC_DOMAIN` if not set. |
+
+#### Optional / Auto-generated
+
+| Variable | Description |
+|----------|-------------|
+| `ANTHROPIC_API_KEY` | Standard Anthropic API key (`sk-ant-api03-...`). Only needed if **not** using Claude Max subscription login. |
+| `BETTER_AUTH_SECRET` | Session signing secret. Auto-generated and persisted on the volume if not set. |
+| `PAPERCLIP_AGENT_JWT_SECRET` | Agent JWT signing secret. Auto-generated if not set. |
 
 All data persists on the `/paperclip` volume — database, configs, auth credentials, backups, and agent state survive across redeploys.
 
