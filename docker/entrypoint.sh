@@ -182,6 +182,12 @@ sync_claude_credentials() {
 }
 sync_claude_credentials
 
+# Always fix .claude dir permissions (SSH login creates files as root)
+if [ -d "/paperclip/.claude" ]; then
+  chown -R node:node /paperclip/.claude 2>/dev/null || true
+  echo "[entrypoint] Fixed /paperclip/.claude ownership to node:node"
+fi
+
 # Ensure PATH includes the local bin
 export PATH="/paperclip/.local/bin:/usr/local/bin:/usr/bin:/bin:${PATH}"
 
